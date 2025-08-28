@@ -3,11 +3,12 @@ from ..core import Callback, Condition, Event, EventData, Machine, State, Transi
 from .nesting import HierarchicalMachine, NestedEvent, NestedState, NestedTransition, NestedEventData, \
     NestedStateConfig, NestedStateIdentifier
 from typing import Any, Awaitable, Optional, List, Type, Dict, Deque, Callable, Union, Iterable, DefaultDict, Literal, \
-    Sequence, Coroutine, Required, TypedDict, Collection
-from asyncio import Task
+    Sequence, Coroutine, Required, TypedDict, Collection, Self
+from anyio import CancelScope
 from logging import Logger
 from enum import Enum
 from contextvars import ContextVar
+from types import TracebackType
 
 from ..core import StateIdentifier, CallbackList
 
@@ -82,11 +83,11 @@ class AsyncMachine(Machine):
     state_cls: Type[NestedAsyncState]
     transition_cls: Type[AsyncTransition]
     event_cls: Type[AsyncEvent]
-    async_tasks: Dict[int, List[Task[Any]]]
+    async_tasks: Dict[int, List[CancelScope]]
     events: Dict[str, AsyncEvent]  # type: ignore
     queued: Union[bool, Literal["model"]]
-    protected_tasks: List[Task[Any]]
-    current_context: ContextVar[Optional[Task[Any]]]
+    protected_tasks: List[CancelScope]
+    current_context: ContextVar[Optional[CancelScope]]
     _transition_queue_dict: Dict[int, Deque[AsyncCallbackFunc]]
     _queued = Union[bool, str]
     def __init__(self, model: Optional[ModelParameter] = ...,
@@ -114,12 +115,17 @@ class AsyncMachine(Machine):
     async def callback(self, func: AsyncCallback, event_data: AsyncEventData) -> None: ...  # type: ignore[override]
     @staticmethod
     async def await_all(callables: List[AsyncCallbackFunc]) -> List[Optional[bool]]: ...
-    async def cancel_running_transitions(self, model: object, msg: Optional[str] = ...) -> None: ...
+    def cancel_running_transitions(self, model: object, msg: Optional[str] = ...) -> None: ...
     async def switch_model_context(self, model: object) -> None: ...
     def get_state(self, state: Union[str, Enum]) -> AsyncState: ...
     async def process_context(self, func: Callable[[], Awaitable[None]], model: object) -> bool: ...
     def remove_model(self, model: object) -> None: ...
     async def _process_async(self, trigger: Callable[[], Awaitable[None]], model: object) -> bool: ...
+    async def __aenter__(self) -> Self: ...
+    async def __aexit__(self,
+                        type_: Optional[Type[BaseException]],
+                        value: Optional[BaseException],
+                        traceback: Optional[TracebackType]) -> bool|None: ...
 
 
 class HierarchicalAsyncMachine(HierarchicalMachine, AsyncMachine):  # type: ignore
@@ -147,11 +153,11 @@ class AsyncTimeout(AsyncState):
     dynamic_methods: List[str]
     timeout: float
     _on_timeout: AsyncCallbacksArg
-    runner: Dict[int, Task[Any]]
+    runner: Dict[int, CancelScope]
     def __init__(self, *args: Any, **kwargs: Any) -> None: ...
     async def enter(self, event_data: AsyncEventData) -> None: ...  # type: ignore[override]
     async def exit(self, event_data: AsyncEventData) -> None: ...  # type: ignore[override]
-    def create_timer(self, event_data: AsyncEventData) -> Task[Any]: ...
+    def create_timer(self, event_data: AsyncEventData) -> CancelScope: ...
     async def _process_timeout(self, event_data: AsyncEventData) -> None: ...
     @property
     def on_timeout(self) -> CallbackList: ...

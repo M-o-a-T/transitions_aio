@@ -1,47 +1,48 @@
-from asyncio import CancelledError
 import sys
+
+from functools import partial
 
 from transitions.extensions.factory import AsyncGraphMachine, HierarchicalAsyncGraphMachine
 from transitions.extensions.states import add_state_features
 
 try:
-    import asyncio
+    import anyio
     from transitions.extensions.asyncio import AsyncMachine, HierarchicalAsyncMachine, AsyncEventData, \
         AsyncTransition, AsyncTimeout
 
 except (ImportError, SyntaxError):
-    asyncio = None  # type: ignore
+    anyio = None  # type: ignore
 
 from unittest.mock import MagicMock
 from unittest import skipIf
 from functools import partial
 import weakref
 from .test_core import TestTransitions, MachineError, TYPE_CHECKING
-from .utils import DummyModel, Stuff
+from .utils import DummyModel, Stuff, ungroup
 from .test_graphviz import pgv as gv
 from .test_pygraphviz import pgv
 
 if TYPE_CHECKING:
     from typing import Type, Sequence, List
-    from transitions.extensions.asyncio import AsyncTransitionConfig
+    from transitions.extensions.anyio import AsyncTransitionConfig
 
 
-@skipIf(asyncio is None, "AsyncMachine requires asyncio and contextvars suppport")
+@skipIf(anyio is None, "AsyncMachine requires asyncio and contextvars suppport")
 class TestAsync(TestTransitions):
 
     @staticmethod
     async def await_false():
-        await asyncio.sleep(0.1)
+        await anyio.sleep(0.1)
         return False
 
     @staticmethod
     async def await_true():
-        await asyncio.sleep(0.1)
+        await anyio.sleep(0.1)
         return True
 
     @staticmethod
     async def cancel_soon():
-        await asyncio.sleep(1)
+        await anyio.sleep(1)
         raise TimeoutError("Callback was not cancelled!")
 
     @staticmethod
@@ -54,7 +55,7 @@ class TestAsync(TestTransitions):
 
     @staticmethod
     async def call_delayed(func, time):
-        await asyncio.sleep(time)
+        await anyio.sleep(time)
         await func()
 
     def setUp(self):
@@ -71,7 +72,7 @@ class TestAsync(TestTransitions):
             await machine.to_C()
 
         machine.on_enter_B(on_enter_B)
-        asyncio.run(machine.to_B())
+        anyio.run(machine.to_B)
 
     def test_dynamic_model_state_attribute(self):
         class Model:
@@ -84,7 +85,7 @@ class TestAsync(TestTransitions):
         self.assertEqual(m.model.state, 'some_value')
 
         m.add_transition('move', 'A', 'B')
-        asyncio.run(m.model.move())
+        anyio.run(m.model.move)
 
         self.assertEqual(m.model.status, 'B')
         self.assertEqual(m.model.state, 'some_value')
@@ -93,19 +94,19 @@ class TestAsync(TestTransitions):
         mock = MagicMock()
 
         async def async_process():
-            await asyncio.sleep(0.1)
+            await anyio.sleep(0.1)
             mock()
 
         m = self.machine
         m.after_state_change = [async_process]
-        asyncio.run(m.go())
+        anyio.run(m.go)
         self.assertEqual(m.state, 'B')
         self.assertTrue(mock.called)
 
     def test_async_condition(self):
         m = self.machine
         m.add_transition('proceed', 'A', 'C', conditions=self.await_true, unless=self.await_false)
-        asyncio.run(m.proceed())
+        anyio.run(m.proceed)
         self.assertEqual(m.state, 'C')
 
     def test_async_enter_exit(self):
@@ -113,17 +114,17 @@ class TestAsync(TestTransitions):
         exit_mock = MagicMock()
 
         async def async_enter():
-            await asyncio.sleep(0.1)
+            await anyio.sleep(0.1)
             enter_mock()
 
         async def async_exit():
-            await asyncio.sleep(0.1)
+            await anyio.sleep(0.1)
             exit_mock()
 
         m = self.machine
         m.on_exit_A(async_exit)
         m.on_enter_B(async_enter)
-        asyncio.run(m.go())
+        anyio.run(m.go)
         self.assertTrue(exit_mock.called)
         self.assertTrue(enter_mock.called)
 
@@ -135,7 +136,7 @@ class TestAsync(TestTransitions):
 
         m = self.machine
         m.add_transition('proceed', 'A', 'C', conditions=self.synced_true, after=sync_process)
-        asyncio.run(m.proceed())
+        anyio.run(m.proceed)
         self.assertEqual(m.state, 'C')
         self.assertTrue(mock.called)
 
@@ -150,12 +151,13 @@ class TestAsync(TestTransitions):
         m2.add_transition(trigger='go', source='A', dest=None, conditions=m1.is_C, after=m1.reset)
 
         async def run():
-            _ = asyncio.gather(m1.go(),  # should block before B
-                               self.call_delayed(m1.fix, 0.05),  # should cancel task and go to C
-                               self.call_delayed(m1.check, 0.07),  # should exit before m1.fix
-                               self.call_delayed(m2.go, 0.1))  # should cancel m1.fix
+            async with anyio.create_task_group() as tg:
+                tg.start_soon(m1.go)  # should block before B
+                tg.start_soon(self.call_delayed, m1.fix, 0.05)  # should cancel task and go to C
+                tg.start_soon(self.call_delayed, m1.check, 0.07)  # should exit before m1.fix
+                tg.start_soon(self.call_delayed, m2.go, 0.1)  # should cancel m1.fix
             assert m1.is_A()
-        asyncio.run(run())
+        anyio.run(run)
 
     def test_async_callback_arguments(self):
 
@@ -164,10 +166,10 @@ class TestAsync(TestTransitions):
                 raise ValueError("should_fail has been set")
 
         self.machine.on_enter_B(process)
-        with self.assertRaises(ValueError):
-            asyncio.run(self.machine.go())
-        asyncio.run(self.machine.to_A())
-        asyncio.run(self.machine.go(should_fail=False))
+        with self.assertRaises(ValueError), ungroup:
+            anyio.run(self.machine.go)
+        anyio.run(self.machine.to_A)
+        anyio.run(partial(self.machine.go, should_fail=False))
 
     def test_async_callback_event_data(self):
 
@@ -190,17 +192,17 @@ class TestAsync(TestTransitions):
         m.add_transition('go', 'A', 'B', conditions=[sync_condition, async_conditions],
                          after=[sync_callback, async_callback])
         m.add_transition('go', 'B', 'A', conditions=sync_condition)
-        asyncio.run(m.go())
+        anyio.run(m.go)
         self.assertTrue(m.is_B())
-        asyncio.run(m.go())
+        anyio.run(m.go)
         self.assertTrue(m.is_B())
 
     def test_async_invalid_triggers(self):
-        asyncio.run(self.machine.to_B())
-        with self.assertRaises(MachineError):
-            asyncio.run(self.machine.go())
+        anyio.run(self.machine.to_B)
+        with self.assertRaises(MachineError), ungroup:
+            anyio.run(self.machine.go)
         self.machine.ignore_invalid_triggers = True
-        asyncio.run(self.machine.go())
+        anyio.run(self.machine.go)
         self.assertTrue(self.machine.is_B())
 
     def test_async_dispatch(self):
@@ -214,7 +216,7 @@ class TestAsync(TestTransitions):
         machine.add_model(model1)
         machine.add_model(model2, initial='B')
         machine.add_model(model3, initial='C')
-        asyncio.run(machine.dispatch('go'))
+        anyio.run(machine.dispatch, 'go')
         self.assertTrue(model1.is_B())
         self.assertEqual('C', model2.state)
         self.assertEqual(machine.initial, model3.state)
@@ -230,7 +232,7 @@ class TestAsync(TestTransitions):
                 await machine.run(machine=machine)
                 self.assertEqual(machine.state, 'A')
             else:
-                with self.assertRaises(MachineError):
+                with self.assertRaises(MachineError), ungroup:
                     await machine.run(machine=machine)
 
         async def raise_machine_error(event_data):
@@ -252,20 +254,20 @@ class TestAsync(TestTransitions):
         ]  # type: Sequence[AsyncTransitionConfig]
 
         m = self.machine_cls(states=states, transitions=transitions, initial='A')
-        asyncio.run(m.walk(machine=m))
+        anyio.run(partial(m.walk, machine=m))
         self.assertEqual('B', m.state)
         m = self.machine_cls(states=states, transitions=transitions, initial='A', queued=True)
-        asyncio.run(m.walk(machine=m))
+        anyio.run(partial(m.walk, machine=m))
         self.assertEqual('C', m.state)
         m = self.machine_cls(states=states, initial='A', queued=True, send_event=True,
                              before_state_change=raise_machine_error)
-        with self.assertRaises(MachineError):
-            asyncio.run(m.to_C())
+        with self.assertRaises(MachineError), ungroup:
+            anyio.run(m.to_C)
         m = self.machine_cls(states=states, initial='A', queued=True, send_event=True)
         m.add_transition('go', 'A', 'B', after='go')
         m.add_transition('go', 'B', 'C', before=raise_exception)
-        with self.assertRaises(ValueError):
-            asyncio.run(m.go())
+        with self.assertRaises(ValueError), ungroup:
+            anyio.run(m.go)
         self.assertEqual('B', m.state)
 
     def test_model_queue(self):
@@ -280,7 +282,7 @@ class TestAsync(TestTransitions):
         async def run():
             transitions = [
                 {'trigger': 'mock', 'source': ['A', 'B'], 'dest': 'B', 'after': mock},
-                {'trigger': 'delayed', 'source': 'A', 'dest': 'B', 'before': partial(asyncio.sleep, 0.1)},
+                {'trigger': 'delayed', 'source': 'A', 'dest': 'B', 'before': partial(anyio.sleep, 0.1)},
                 {'trigger': 'check', 'source': 'B', 'dest': 'A', 'after': check_mock},
                 {'trigger': 'error', 'source': 'B', 'dest': 'C', 'before': self.raise_value_error}
             ]  # type: Sequence[AsyncTransitionConfig]
@@ -288,20 +290,27 @@ class TestAsync(TestTransitions):
                                  queued='model')
             # call m1.delayed and m2.mock should be called immediately
             # m1.check should be delayed until after m1.delayed
-            await asyncio.gather(m1.delayed(), self.call_delayed(m1.check, 0.02), self.call_delayed(m2.mock, 0.04))
+            async with anyio.create_task_group() as tg:
+                tg.start_soon(m1.delayed)
+                tg.start_soon(self.call_delayed, m1.check, 0.02)
+                tg.start_soon(self.call_delayed, m2.mock, 0.04)
             self.assertTrue(m1.is_A())
             self.assertTrue(m2.is_B())
             mock.reset_mock()
-            with self.assertRaises(ValueError):
+            with self.assertRaises(ValueError), ungroup:
                 # m1.error raises an error which should cancel m1.to_A but not m2.mock and m2.check
-                await asyncio.gather(m1.to_A(), m2.to_A(),
-                                     self.call_delayed(m1.delayed, 0.01), self.call_delayed(m2.delayed, 0.01),
-                                     self.call_delayed(m1.error, 0.02), self.call_delayed(m1.to_A, 0.03),
-                                     self.call_delayed(m2.mock, 0.03), self.call_delayed(m2.check, 0.04))
-            await asyncio.sleep(0.05)  # give m2 events time to finish
+                async with anyio.create_task_group() as tg:
+                    tg.start_soon(m1.to_A)
+                    tg.start_soon(m2.to_A)
+                    tg.start_soon(self.call_delayed, m1.delayed, 0.01)
+                    tg.start_soon(self.call_delayed, m2.delayed, 0.01)
+                    tg.start_soon(self.call_delayed, m1.error, 0.02)
+                    tg.start_soon(self.call_delayed, m2.mock, 0.03)
+                    tg.start_soon(self.call_delayed, m2.check, 0.04)
+            await anyio.sleep(0.05)  # give m2 events time to finish
             self.assertTrue(m1.is_B())
             self.assertTrue(m2.is_A())
-        asyncio.run(run())
+        anyio.run(run)
 
     def test_queued_remove(self):
 
@@ -312,7 +321,7 @@ class TestAsync(TestTransitions):
             self.assertEqual(expect, len(event_data.machine._transition_queue_dict[id(event_data.model)]))
 
         transitions = [
-            {'trigger': 'go', 'source': 'A', 'dest': 'B', 'after': partial(asyncio.sleep, 0.1)},
+            {'trigger': 'go', 'source': 'A', 'dest': 'B', 'after': lambda _=None: anyio.sleep(0.1)},
             {'trigger': 'go', 'source': 'B', 'dest': 'C'},
             {'trigger': 'remove', 'source': 'B', 'dest': None, 'prepare': ['to_A', 'to_C'],
              'before': partial(check_queue, 4), 'after': remove_model},
@@ -326,8 +335,11 @@ class TestAsync(TestTransitions):
             self.machine_cls = HierarchicalAsyncMachine
             m = self.machine_cls(model=[m1, m2], states=['A', 'B', 'C'], transitions=transitions,
                                  initial='A', queued=True, send_event=True)
-            await asyncio.gather(m1.go(), m2.go(),
-                                 self.call_delayed(m1.remove, 0.02), self.call_delayed(m2.go, 0.04))
+            async with anyio.create_task_group() as tg:
+                tg.start_soon(m1.go)
+                tg.start_soon(m2.go)
+                tg.start_soon(self.call_delayed, m1.remove, 0.02)
+                tg.start_soon(self.call_delayed, m2.go, 0.04)
             _ = repr(m._transition_queue_dict)  # check whether _DictionaryMock returns a valid representation
             self.assertTrue(m1.is_B())
             self.assertTrue(m2.is_C())
@@ -338,12 +350,15 @@ class TestAsync(TestTransitions):
             m2 = DummyModel()
             m = self.machine_cls(model=[m1, m2], states=['A', 'B', 'C'], transitions=transitions,
                                  initial='A', queued='model', send_event=True)
-            await asyncio.gather(m1.go(), m2.go(),
-                                 self.call_delayed(m1.remove_queue, 0.02), self.call_delayed(m2.go, 0.04))
+            async with anyio.create_task_group() as tg:
+                tg.start_soon(m1.go)
+                tg.start_soon(m2.go)
+                tg.start_soon(self.call_delayed, m1.remove_queue, 0.02)
+                tg.start_soon(self.call_delayed, m2.go, 0.04)
             self.assertTrue(m1.is_B())
             self.assertTrue(m2.is_C())
             m.remove_model(m2)
-        asyncio.run(run())
+        anyio.run(run)
 
     def test_async_timeout(self):
         timeout_called = MagicMock()
@@ -360,22 +375,23 @@ class TestAsync(TestTransitions):
             m.add_state('Fail', timeout=1)
 
         async def run():
-            await m.to_B()
-            await asyncio.sleep(0.1)
-            self.assertTrue(m.is_B())  # timeout shouldn't be triggered
-            await m.to_A()  # cancel timeout
-            self.assertTrue(m.is_A())
-            await m.to_B()
-            await asyncio.sleep(0.3)
-            self.assertTrue(m.is_C())  # now timeout should have been processed
-            self.assertTrue(timeout_called.called)
-            m.get_state('C').timeout = 0.05
-            await m.to_B()
-            await asyncio.sleep(0.3)
-            self.assertTrue(m.is_D())
-            self.assertEqual(2, timeout_called.call_count)
+            async with m:
+                await m.to_B()
+                await anyio.sleep(0.1)
+                self.assertTrue(m.is_B())  # timeout shouldn't be triggered
+                await m.to_A()  # cancel timeout
+                self.assertTrue(m.is_A())
+                await m.to_B()
+                await anyio.sleep(0.3)
+                self.assertTrue(m.is_C())  # now timeout should have been processed
+                self.assertTrue(timeout_called.called)
+                m.get_state('C').timeout = 0.05
+                await m.to_B()
+                await anyio.sleep(0.3)
+                self.assertTrue(m.is_D())
+                self.assertEqual(2, timeout_called.call_count)
 
-        asyncio.run(run())
+        anyio.run(run)
 
     def test_timeout_cancel(self):
         error_mock = MagicMock()
@@ -385,7 +401,7 @@ class TestAsync(TestTransitions):
         @add_state_features(AsyncTimeout)
         class TimeoutMachine(self.machine_cls):  # type: ignore
             async def on_enter_B(self):
-                await asyncio.sleep(0.2)
+                await anyio.sleep(0.2)
                 long_op_mock()  # should never be called
 
             async def handle_timeout(self):
@@ -396,36 +412,39 @@ class TestAsync(TestTransitions):
                                  initial="A", on_exception=error_mock)
 
         async def run():
-            await machine.to_B()
-            assert timout_mock.called
-            assert error_mock.call_count == 1  # should only be one CancelledError
-            assert not long_op_mock.called
-            assert machine.is_A()
-        asyncio.run(run())
+            async with machine:
+                await machine.to_B()
+                assert timout_mock.called
+                assert error_mock.call_count == 1  # should only be one CancelledError
+                assert not long_op_mock.called
+                assert machine.is_A()
+        anyio.run(run)
 
-    @skipIf(sys.version_info < (3, 11), "Cancel requires Python 3.11+")
     def test_user_cancel(self):
         machine = self.machine_cls(states=['A', 'B'], initial='A', before_state_change=self.cancel_soon)
 
         async def run1():
             try:
-                await asyncio.wait_for(machine.to_B(), timeout=0.5)
-            except asyncio.TimeoutError:
+                with anyio.fail_after(0.5):
+                    await machine.to_B()
+            except TimeoutError:
                 return  # expected case
             assert False, "Expected a TimeoutError"
 
         async def run2():
-            async def raise_timeout():
-                raise asyncio.TimeoutError("My custom timeout")
-            try:
-                machine.add_transition('cancelled', 'A', 'B', before=raise_timeout)
-                await machine.cancelled()
-            except asyncio.TimeoutError:
-                return  # expected case
-            assert False, "Expected a TimeoutError"
-        asyncio.run(run1())
+            async with machine:
+                async def raise_timeout():
+                    raise TimeoutError("My custom timeout")
+                try:
+                    machine.add_transition('cancelled', 'A', 'B', before=raise_timeout)
+                    with ungroup:
+                        await machine.cancelled()
+                except TimeoutError:
+                    return  # expected case
+                assert False, "Expected a TimeoutError"
+        anyio.run(run1)
         assert machine.is_A()
-        asyncio.run(run2())
+        anyio.run(run2)
 
     def test_queued_timeout_cancel(self):
         error_mock = MagicMock()
@@ -438,7 +457,7 @@ class TestAsync(TestTransitions):
                 await self.to_C()
                 await self.to_D()
                 await self.to_E()
-                await asyncio.sleep(1)
+                await anyio.sleep(1)
                 long_op_mock()
 
             async def handle_timeout(self, event_data):
@@ -446,7 +465,7 @@ class TestAsync(TestTransitions):
                 raise TimeoutError()
 
             async def handle_error(self, event_data):
-                if isinstance(event_data.error, CancelledError):
+                if isinstance(event_data.error, anyio.get_cancelled_exc_class()):
                     if error_mock.called:
                         raise RuntimeError()
                     error_mock()
@@ -458,25 +477,26 @@ class TestAsync(TestTransitions):
                                  initial="A", queued=True, send_event=True, on_exception="handle_error")
 
         async def run():
-            await machine.to_B()
-            assert timout_mock.called
-            assert error_mock.called
-            assert not long_op_mock.called
-            assert machine.is_B()
-            with self.assertRaises(RuntimeError):
+            async with machine:
                 await machine.to_B()
-        asyncio.run(run())
+                assert timout_mock.called
+                assert error_mock.called
+                assert not long_op_mock.called
+                assert machine.is_B()
+                with self.assertRaises(RuntimeError), ungroup:
+                    await machine.to_B()
+        anyio.run(run)
 
     def test_callback_order(self):
         finished = []
 
         class Model:
             async def before(self):
-                await asyncio.sleep(0.1)
+                await anyio.sleep(0.1)
                 finished.append(2)
 
             async def after(self):
-                await asyncio.sleep(0.1)
+                await anyio.sleep(0.1)
                 finished.append(3)
 
         async def after_state_change():
@@ -494,7 +514,7 @@ class TestAsync(TestTransitions):
             initial='start',
         )
         m.add_transition('transit', 'start', 'end', after='after', before='before')
-        asyncio.run(model.transit())
+        anyio.run(model.transit)
         assert finished == [1, 2, 3, 4]
 
     def test_task_cleanup(self):
@@ -507,21 +527,21 @@ class TestAsync(TestTransitions):
             for model in m.models:
                 await model.to_B()
 
-        asyncio.run(run())
+        anyio.run(run)
         self.assertEqual(0, len(m.async_tasks))
 
     def test_on_exception_callback(self):
         mock = MagicMock()
 
         def on_exception(event_data):
-            self.assertIsInstance(event_data.error, (ValueError, MachineError))
+            self.assertIsInstance(ungroup.one(event_data.error), (ValueError, MachineError))
             mock()
 
         m = self.machine_cls(states=['A', 'B'], initial='A', transitions=[['go', 'A', 'B']], send_event=True,
                              after_state_change=partial(self.stuff.this_raises, ValueError))
 
         async def run():
-            with self.assertRaises(ValueError):
+            with self.assertRaises(ValueError), ungroup:
                 await m.to_B()
 
             m.on_exception.append(on_exception)
@@ -531,7 +551,7 @@ class TestAsync(TestTransitions):
             self.assertEqual(2, mock.call_count)
             self.assertTrue(mock.called)
 
-        asyncio.run(run())
+        anyio.run(run)
 
     def test_on_exception_finalize(self):
         mock = MagicMock()
@@ -546,13 +566,13 @@ class TestAsync(TestTransitions):
             self.assertTrue(await m.to_B())
             self.assertTrue(mock.called)
 
-        asyncio.run(run())
+        anyio.run(run)
 
     def test_weakproxy_model(self):
         d = DummyModel()
         pr = weakref.proxy(d)
         self.machine_cls(pr, states=['A', 'B'], transitions=[['go', 'A', 'B']], initial='A')
-        asyncio.run(pr.go())
+        anyio.run(pr.go)
         self.assertTrue(pr.is_B())
 
     def test_may_transition_with_auto_transitions(self):
@@ -568,7 +588,7 @@ class TestAsync(TestTransitions):
             assert await d.may_to_C()
             assert await d.may_trigger("to_C")
 
-        asyncio.run(run())
+        anyio.run(run)
 
     def test_machine_may_transitions(self):
         states = ['A', 'B', 'C']
@@ -592,7 +612,7 @@ class TestAsync(TestTransitions):
             assert not await m.may_walk()
             assert not await m.may_trigger("walk")
 
-        asyncio.run(run())
+        anyio.run(run)
 
     def test_may_transition_with_invalid_state(self):
         states = ['A', 'B', 'C']
@@ -604,7 +624,7 @@ class TestAsync(TestTransitions):
             assert not await d.may_walk()
             assert not await d.may_trigger("walk")
 
-        asyncio.run(run())
+        anyio.run(run)
 
     def test_may_transition_internal(self):
         states = ['A', 'B', 'C']
@@ -623,7 +643,7 @@ class TestAsync(TestTransitions):
             assert await d.may_wait()
             assert await d.may_trigger("wait")
 
-        asyncio.run(run())
+        anyio.run(run)
 
     def test_may_transition_with_exception(self):
 
@@ -639,17 +659,17 @@ class TestAsync(TestTransitions):
             assert event_data.machine == stuff.machine
 
         async def run():
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(RuntimeError), ungroup:
                 await stuff.may_raises()
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(RuntimeError), ungroup:
                 await stuff.may_trigger("raises")
             assert stuff.is_A()
             assert await stuff.may_works()
             assert await stuff.may_trigger("works")
             assert await stuff.works()
-            with self.assertRaises(ValueError):
+            with self.assertRaises(ValueError), ungroup:
                 await stuff.may_raises()
-            with self.assertRaises(ValueError):
+            with self.assertRaises(ValueError), ungroup:
                 await stuff.may_trigger("raises")
             assert stuff.is_B()
             stuff.machine.on_exception.append(process_exception)
@@ -659,7 +679,7 @@ class TestAsync(TestTransitions):
             assert not await stuff.may_raises()
             assert not await stuff.may_trigger("raises")
 
-        asyncio.run(run())
+        anyio.run(run)
 
     def test_on_final(self):
         final_mock = MagicMock()
@@ -674,7 +694,7 @@ class TestAsync(TestTransitions):
             await machine.to_B()
             self.assertEqual(2, final_mock.call_count)
 
-        asyncio.run(run())
+        anyio.run(run)
 
     def test_custom_transition(self):
 
@@ -719,7 +739,7 @@ class TestAsync(TestTransitions):
             assert trans[0].my_dict == {"baz": "bar"}
             assert trans[0].my_none is None
 
-        asyncio.run(run())
+        anyio.run(run)
 
     def test_deprecation_warnings(self):
         import warnings
@@ -728,10 +748,10 @@ class TestAsync(TestTransitions):
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always")
                 machine = self.machine_cls(states=['A', 'B'], initial='A')
-                await machine.cancel_running_transitions(self)
+                machine.cancel_running_transitions(self)
                 self.assertEqual(len(w), 0)
                 # msg is deprecated, should not be used
-                await machine.cancel_running_transitions(self, msg="Custom message")
+                machine.cancel_running_transitions(self, msg="Custom message")
                 self.assertEqual(len(w), 1)
 
             with warnings.catch_warnings(record=True) as w:
@@ -741,10 +761,10 @@ class TestAsync(TestTransitions):
                 await machine.switch_model_context(self)
                 self.assertEqual(len(w), 1)
 
-        asyncio.run(run())
+        anyio.run(run)
 
 
-@skipIf(asyncio is None or (pgv is None and gv is None), "AsyncGraphMachine requires asyncio and (py)gaphviz")
+@skipIf(anyio is None or (pgv is None and gv is None), "AnyioGraphMachine requires asyncio and (py)graphviz")
 class TestAsyncGraphMachine(TestAsync):
 
     def setUp(self):
@@ -765,7 +785,7 @@ class TestHierarchicalAsync(TestAsync):
 
         async def sleep_mock():
             # type: () -> None
-            await asyncio.sleep(0.1)
+            await anyio.sleep(0.1)
             mock()
 
         states = ['A', 'B', {'name': 'C', 'children': ['1', {'name': '2', 'children': ['a', 'b'], 'initial': 'a'},
@@ -774,7 +794,7 @@ class TestHierarchicalAsync(TestAsync):
             {'trigger': 'go', 'source': 'A', 'dest': 'C', 'after': [sleep_mock] * 100}
         ]  # type: Sequence[AsyncTransitionConfig]
         machine = self.machine_cls(states=states, transitions=transitions, initial='A')
-        asyncio.run(machine.go())
+        anyio.run(machine.go)
         self.assertEqual('C{0}2{0}a'.format(machine.state_cls.separator), machine.state)
         self.assertEqual(100, mock.call_count)
 
@@ -785,11 +805,11 @@ class TestHierarchicalAsync(TestAsync):
                                  {'name': '2', 'children': ['b', 'c'], 'initial': 'b'},
                                  {'name': '3', 'children': ['x', 'y', 'z'], 'initial': 'y'}]}]
         machine = self.machine_cls(states=states, initial='A')
-        asyncio.run(machine.to_P())
+        anyio.run(machine.to_P)
         self.assertEqual(['P{0}1{0}a'.format(machine.state_cls.separator),
                           'P{0}2{0}b'.format(machine.state_cls.separator),
                           'P{0}3{0}y'.format(machine.state_cls.separator)], machine.state)
-        asyncio.run(machine.to_B())
+        anyio.run(machine.to_B)
         self.assertTrue(machine.is_B())
 
     def test_final_state_nested(self):
@@ -833,10 +853,10 @@ class TestHierarchicalAsync(TestAsync):
             self.assertEqual(1, final_mock_B.call_count)
             self.assertEqual(1, final_mock_machine.call_count)
 
-        asyncio.run(run())
+        anyio.run(run)
 
 
-@skipIf(asyncio is None or (pgv is None and gv is None), "AsyncGraphMachine requires asyncio and (py)gaphviz")
+@skipIf(anyio is None or (pgv is None and gv is None), "AnyioGraphMachine requires asyncio and (py)graphviz")
 class TestAsyncHierarchicalGraphMachine(TestHierarchicalAsync):
 
     def setUp(self):

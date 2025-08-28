@@ -19,7 +19,7 @@ with codecs.open("README.md", "r", "utf-8") as f:
 
 tests_require = ["mock", "tox", "graphviz", "pygraphviz"]
 
-extras_require = {"diagrams": ["pygraphviz"]}
+extras_require = {"diagrams": ["pygraphviz"], "anyio": ["anyio"]}
 
 extra_setuptools_args = {}
 if "setuptools" in sys.modules:

@@ -1,5 +1,11 @@
 from transitions import Machine
 
+try:
+    from anyio import get_cancelled_exc_class
+    from sniffio import AsyncLibraryNotFoundError  # type: ignore[import-untyped]
+except ImportError:
+    pass
+
 
 class Stuff(object):
 
@@ -117,3 +123,53 @@ class SomeContext(object):
 
     def __exit__(self, type, value, traceback):
         self._event_list.append((self, "exit"))
+
+
+class _ungroup:
+    """
+    A sync+async context manager that unwraps single-element
+    exception groups.
+    """
+
+    def __call__(self):
+        "Singleton. Returns itself."
+        return self
+
+    @staticmethod
+    def one(e):
+        "convert the exceptiongroup @e to a single exception"
+        if not isinstance(e, BaseExceptionGroup):
+            return e
+
+        try:
+            Cancel = get_cancelled_exc_class()
+        except AsyncLibraryNotFoundError:
+            pass
+        else:
+            c, e = e.split(Cancel)
+            if not e:
+                e = c
+
+        while isinstance(e, BaseExceptionGroup):
+            if len(e.exceptions) != 1:
+                break
+            e = e.exceptions[0]
+        return e
+
+    def __enter__(self):
+        return self
+
+    async def __aenter__(self):
+        return self
+
+    def __exit__(self, c, e, t):
+        if e is None:
+            return
+        e = self.one(e)
+        raise e from None
+
+    async def __aexit__(self, c, e, t):
+        return self.__exit__(c, e, t)
+
+
+ungroup = _ungroup()

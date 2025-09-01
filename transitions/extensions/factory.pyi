@@ -8,7 +8,7 @@ try:
     from transitions.extensions.asyncio import AsyncMachine, AsyncTransition
     from transitions.extensions.asyncio import HierarchicalAsyncMachine, NestedAsyncTransition
 except (ImportError, SyntaxError):
-    # Mocks for Python version 3.6 and earlier
+    # Mocks when anyio is not installed
     class AsyncMachine:  # type: ignore
         pass
 

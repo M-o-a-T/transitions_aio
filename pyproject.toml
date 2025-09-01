@@ -12,8 +12,8 @@ dependencies = [ ]
 dynamic = [ "version",]
 keywords = [ "state machine",]
 requires-python = ">=3.8"
-name = "transitions"
-description = "A lightweight, object-oriented state machine implementation"
+name = "transitions_aio"
+description = "A lightweight, anyio-capable, object-oriented state machine implementation"
 readme = "README.md"
 
 [project.optional-dependencies]
@@ -25,12 +25,12 @@ name = "Tal Yarkoni"
 email = "tyarkoni@gmail.com"
 
 [[project.maintainers]]
-name = "Alexander Neumann"
-email = "aleneum@gmail.com"
+name = "Matthias Urlichs"
+email = "matthias@urlichs.de"
 
 [project.urls]
-homepage = "https://github.com/pytransitions/transitions"
-repository = "https://github.com/pytransitions/transitions.git"
+homepage = "https://github.com/M-o-a-T/transitions_aio"
+repository = "https://github.com/M-o-a-T/transitions_aio.git"
 
 [bdist_wheel]
 universal = 1

@@ -1,26 +1,17 @@
-# <a name="transitions-module"></a> transitions
+# <a name="transitions-module"></a> transitions_aio
 
-[![Version](https://img.shields.io/badge/version-v0.9.4-orange.svg)](https://github.com/pytransitions/transitions)
-[![Build Status](https://github.com/pytransitions/transitions/actions/workflows/pytest.yml/badge.svg)](https://github.com/pytransitions/transitions/actions?query=workflow%3Apytest)
-[![Coverage Status](https://coveralls.io/repos/github/pytransitions/transitions/badge.svg?branch=master)](https://coveralls.io/github/pytransitions/transitions?branch=master)
-[![PyPi](https://img.shields.io/pypi/v/transitions.svg)](https://pypi.org/project/transitions)
-[![Copr](https://img.shields.io/badge/dynamic/json?color=blue&label=copr&query=builds.latest.source_package.version&url=https%3A%2F%2Fcopr.fedorainfracloud.org%2Fapi_3%2Fpackage%3Fownername%3Daleneum%26projectname%3Dpython-transitions%26packagename%3Dpython-transitions%26with_latest_build%3DTrue)](https://copr.fedorainfracloud.org/coprs/aleneum/python-transitions/)
-[![GitHub commits](https://img.shields.io/github/commits-since/pytransitions/transitions/0.9.3.svg)](https://github.com/pytransitions/transitions/compare/0.9.3...master)
-[![License](https://img.shields.io/github/license/pytransitions/transitions.svg)](LICENSE)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/pytransitions/transitions/master?filepath=examples%2FPlayground.ipynb)
+A lightweight, object-oriented, anyio-enabled state machine implementation in Python with many extensions. Compatible with Python 3.8+.
 
-<!-- [![Pylint](https://img.shields.io/badge/pylint-9.71%2F10-green.svg)](https://github.com/pytransitions/transitions) -->
-<!--[![Name](Image)](Link)-->
-
-A lightweight, object-oriented state machine implementation in Python with many extensions. Compatible with Python 3.8+.
+This is a fork of [transitions](https://github.com/pytransitions/transitions).
+It replaces `asyncio` with [anyio](https://github.com/agronholm/anyio).
 
 ## Installation
 
-    pip install transitions
+    pip install transitions_aio as transitions
 
 ... or clone the repo from GitHub and then:
 
-    python setup.py install
+    python -mbuild install
 
 ## Table of Contents
 

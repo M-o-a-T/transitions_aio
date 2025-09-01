@@ -530,7 +530,7 @@ For a transition to be executed, some event needs to _trigger_ it. There are two
     >>> lump.state
     'gas'
     ```
-    
+
     Note how you don't have to explicitly define these methods anywhere; the name of each transition is bound to the model passed to the `Machine` initializer (in this case, `lump`). This also means that your model **should not** already contain methods with the same name as event triggers since `transitions` will only attach convenience methods to your model if the spot is not already taken. If you want to modify that behaviour, have a look at the [FAQ](examples/Frequently%20asked%20questions.ipynb).
 2. Using the `trigger` method, now attached to your model (if it hasn't been there before). This method lets you execute transitions by name in case dynamic triggering is required:
     ```python
@@ -1300,7 +1300,7 @@ from base_model import BaseModel
 class Model(BaseModel):  #  call_this will be an abstract method in BaseModel
 
     def call_this(self) -> None:
-        # do something  
+        # do something
 
 model = Model()
 machine = Machine(model, **simple_config)
@@ -1822,7 +1822,7 @@ stateDiagram-v2
   classDef s_parallel color:black,fill:white
   classDef s_active color:red,fill:darksalmon
   classDef s_previous color:blue,fill:azure
-  
+
   state "A" as A
   Class A s_previous
   state "B" as B
@@ -1847,7 +1847,7 @@ stateDiagram-v2
       C_2_b --> [*]
     }
   }
-  
+
   C --> A: reset
   A --> B: init
   B --> C: do
@@ -2001,13 +2001,16 @@ times, even in the context of a single trigger invocation.
 
 #### <a name="async"></a> Using async callbacks
 
-If you are using Python 3.7 or later, you can use `AsyncMachine` to work with asynchronous callbacks.
+You can use `AsyncMachine` to work with asynchronous callbacks.
 You can mix synchronous and asynchronous callbacks if you like but this may have undesired side effects.
 Note that events need to be awaited and the event loop must also be handled by you.
 
+Async support in Transitions is handled by [anyio](https://github.com/agronholm/anyio/).
+It thus works with [Trio](https://github.com/python-trio/trio/) as well as asyncio.
+
 ```python
 from transitions.extensions.asyncio import AsyncMachine
-import asyncio
+import anyio  # or asyncio
 import time
 
 
@@ -2019,7 +2022,7 @@ class AsyncModel:
 
     async def before_change(self):
         print("I am asynchronous and will block now for 100 milliseconds.")
-        await asyncio.sleep(0.1)
+        await anyio.sleep(0.1)
         print("I am done waiting.")
 
     def sync_before_change(self):
@@ -2037,7 +2040,9 @@ transition = dict(trigger="start", source="Start", dest="Done", prepare="prepare
 model = AsyncModel()
 machine = AsyncMachine(model, states=["Start", "Done"], transitions=[transition], initial='Start')
 
-asyncio.get_event_loop().run_until_complete(model.start())
+anyio.run(model.start)
+# asyncio.run(model.start())
+
 # >>> I am synchronous.
 #     I am asynchronous and will block now for 100 milliseconds.
 #     I am asynchronous and will block now for 100 milliseconds.
@@ -2055,12 +2060,13 @@ asyncio.get_event_loop().run_until_complete(model.start())
 assert model.is_Done()
 ```
 
-So, why do you need to use Python 3.7 or later you may ask.
-Async support has been introduced earlier.
 `AsyncMachine` makes use of `contextvars` to handle running callbacks when new events arrive before a transition
 has been finished:
 
 ```python
+from transitions.extensions.asyncio import AsyncMachine
+import asyncio
+
 async def await_never_return():
     await asyncio.sleep(100)
     raise ValueError("That took too long!")
@@ -2074,12 +2080,14 @@ m2.add_transition(trigger='go', source='A', dest='B', before=await_never_return)
 m2.add_transition(trigger='fix', source='A', dest='C')
 m1.add_transition(trigger='go', source='A', dest='B', after='go')
 m1.add_transition(trigger='go', source='B', dest='C', after=fix)
-asyncio.get_event_loop().run_until_complete(asyncio.gather(m2.go(), m1.go()))
+async def main():
+    await asyncio.gather(m2.go(), m1.go())
+asyncio.run(main())
 
 assert m1.state == m2.state
 ```
 
-This example actually illustrates two things:
+This example illustrates two things:
 First, that 'go' called in m1's transition from `A` to be `B` is not cancelled and second, calling `m2.fix()` will
 halt the transition attempt of m2 from `A` to `B` by executing 'fix' from `A` to `C`.
 This separation would not be possible without `contextvars`.
@@ -2207,7 +2215,7 @@ class VerboseMachine(Machine):
 If you want to avoid threads in your `AsyncMachine` entirely, you can replace the `Timeout` state feature with `AsyncTimeout` from the `asyncio` extension:
 
 ```python
-import asyncio
+import anyio
 from transitions.extensions.states import add_state_features
 from transitions.extensions.asyncio import AsyncTimeout, AsyncMachine
 
@@ -2217,13 +2225,18 @@ class TimeoutMachine(AsyncMachine):
 
 states = ['A', {'name': 'B', 'timeout': 0.2, 'on_timeout': 'to_C'}, 'C']
 m = TimeoutMachine(states=states, initial='A', queued=True)  # see remark below
-asyncio.run(asyncio.wait([m.to_B(), asyncio.sleep(0.1)]))
-assert m.is_B()  # timeout shouldn't be triggered
-asyncio.run(asyncio.wait([m.to_B(), asyncio.sleep(0.3)]))
-assert m.is_C()   # now timeout should have been processed
+async def main():
+    async with m:  # required to ensure that timeout tasks terminate when your machine ends
+        await m.to_B()
+        await anyio.sleep(0.1)
+        assert m.is_B()  # timeout shouldn't have triggered yet
+        await anyio.sleep(0.2)
+        assert m.is_C()   # now the timeout should have been processed
+anyio.run(main)
 ```
 
 You should consider passing `queued=True` to the `TimeoutMachine` constructor. This will make sure that events are processed sequentially and avoid asynchronous [racing conditions](https://github.com/pytransitions/transitions/issues/459) that may appear when timeout and event happen in proximity.
+
 
 #### <a name="django-support"></a> Using transitions together with Django
 

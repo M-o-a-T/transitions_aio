@@ -11,7 +11,7 @@ It replaces `asyncio` with [anyio](https://github.com/agronholm/anyio).
 
 ... or clone the repo from GitHub and then:
 
-    python -mbuild install
+    python -mbuild
 
 ## Table of Contents
 

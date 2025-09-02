@@ -6,7 +6,7 @@ requires = [ "setuptools", "wheel", "setuptools-scm"]
 classifiers = [
         "Intended Audience :: Developers",
         "Programming Language :: Python :: 3",
-        "Development Status :: 5 - Production",
+        "Development Status :: 4 - Beta",
         ]
 dependencies = [ ]
 dynamic = [ "version",]

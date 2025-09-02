@@ -1,9 +1,9 @@
-from transitions.core import (
+from transitions_aio.core import (
     StateIdentifier, StateConfig, CallbacksArg, Transition, EventData, TransitionConfig, ModelParameter
 )
-from transitions.extensions.nesting import NestedTransition
-from transitions.extensions.diagrams_base import BaseGraph, GraphModelProtocol, GraphProtocol
-from transitions.extensions.markup import MarkupMachine, HierarchicalMarkupMachine
+from transitions_aio.extensions.nesting import NestedTransition
+from transitions_aio.extensions.diagrams_base import BaseGraph, GraphModelProtocol, GraphProtocol
+from transitions_aio.extensions.markup import MarkupMachine, HierarchicalMarkupMachine
 from logging import Logger
 from typing import Any, Literal, Sequence, Type, List, Dict, Union, Optional, Generator
 

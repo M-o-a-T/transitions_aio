@@ -7,7 +7,7 @@ import time
 from threading import Thread
 import logging
 
-from transitions.extensions import LockedHierarchicalMachine, LockedMachine
+from transitions_aio.extensions import LockedHierarchicalMachine, LockedMachine
 from .test_nesting import TestNestedTransitions
 from .test_core import TestTransitions, TYPE_CHECKING
 from .utils import Stuff, DummyModel, SomeContext

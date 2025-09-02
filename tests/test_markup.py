@@ -5,7 +5,7 @@ except ImportError:
 
 from functools import partial
 
-from transitions.extensions.markup import MarkupMachine, HierarchicalMarkupMachine, rep
+from transitions_aio.extensions.markup import MarkupMachine, HierarchicalMarkupMachine, rep
 
 from .test_core import TYPE_CHECKING
 from .utils import Stuff
@@ -22,7 +22,7 @@ from enum import Enum
 
 if TYPE_CHECKING:
     from typing import List, Dict, Sequence, Union, Type
-    from transitions.core import TransitionConfig, StateConfig
+    from transitions_aio.core import TransitionConfig, StateConfig
 
 
 class SimpleModel(object):

@@ -1,10 +1,10 @@
 from .utils import Stuff, DummyModel
 from .test_core import TestTransitions, TYPE_CHECKING
 
-from transitions.extensions import (
+from transitions_aio.extensions import (
     LockedGraphMachine, GraphMachine, HierarchicalGraphMachine, LockedHierarchicalGraphMachine
 )
-from transitions.extensions.states import add_state_features, Timeout, Tags
+from transitions_aio.extensions.states import add_state_features, Timeout, Tags
 from unittest import skipIf
 import tempfile
 import os
@@ -20,7 +20,7 @@ except ImportError:  # pragma: no cover
 
 if TYPE_CHECKING:
     from typing import Type, List, Collection, Union, Literal, Sequence, Dict, Optional
-    from transitions.core import TransitionConfig, TransitionConfigDict
+    from transitions_aio.core import TransitionConfig, TransitionConfigDict
 
 
 class TestDiagramsImport(TestCase):
@@ -267,8 +267,8 @@ class TestDiagrams(TestTransitions):
     def test_graphviz_fallback(self):
         try:
             from unittest import mock  # will raise an ImportError in Python 2.7
-            from transitions.extensions.diagrams_graphviz import Graph
-            from transitions.extensions import diagrams_pygraphviz
+            from transitions_aio.extensions.diagrams_graphviz import Graph
+            from transitions_aio.extensions import diagrams_pygraphviz
             from importlib import reload
             with mock.patch.dict('sys.modules', {'pygraphviz': None}):
                 # load and reload diagrams_pygraphviz to make sure

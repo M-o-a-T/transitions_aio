@@ -5,8 +5,8 @@ from .nesting import HierarchicalMachine, NestedEvent
 from typing import Any, Type, Dict, Tuple, Callable, Union
 
 try:
-    from transitions.extensions.asyncio import AsyncMachine, AsyncTransition
-    from transitions.extensions.asyncio import HierarchicalAsyncMachine, NestedAsyncTransition
+    from transitions_aio.extensions.asyncio import AsyncMachine, AsyncTransition
+    from transitions_aio.extensions.asyncio import HierarchicalAsyncMachine, NestedAsyncTransition
 except (ImportError, SyntaxError):
     # Mocks when anyio is not installed
     class AsyncMachine:  # type: ignore

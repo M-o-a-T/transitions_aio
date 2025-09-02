@@ -6,8 +6,8 @@ from os.path import getsize
 from os import unlink
 from functools import partial
 
-from transitions.extensions.nesting import NestedState, HierarchicalMachine
-from transitions.extensions import HierarchicalGraphMachine
+from transitions_aio.extensions.nesting import NestedState, HierarchicalMachine
+from transitions_aio.extensions import HierarchicalGraphMachine
 
 from unittest import skipIf
 from .test_core import TestTransitions, TestCase, TYPE_CHECKING
@@ -27,7 +27,7 @@ except ImportError:  # pragma: no cover
 
 if TYPE_CHECKING:
     from typing import List, Dict, Union, Type, Sequence
-    from transitions.core import TransitionConfig
+    from transitions_aio.core import TransitionConfig
 
 default_separator = NestedState.separator
 
@@ -571,7 +571,7 @@ class TestNestedTransitions(TestTransitions):
         self.assertTrue(model.is_C_1())
 
     def test_correct_subclassing(self):
-        from transitions.core import State
+        from transitions_aio.core import State
 
         class WrongStateClass(self.machine_cls):  # type: ignore
             state_cls = State

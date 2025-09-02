@@ -2,10 +2,10 @@ from .test_graphviz import TestDiagrams, TestDiagramsNested
 from .utils import Stuff, DummyModel
 from .test_core import TestTransitions, TYPE_CHECKING
 
-from transitions.extensions import (
+from transitions_aio.extensions import (
     LockedGraphMachine, GraphMachine, HierarchicalGraphMachine, LockedHierarchicalGraphMachine
 )
-from transitions.extensions.states import add_state_features, Timeout, Tags
+from transitions_aio.extensions.states import add_state_features, Timeout, Tags
 from unittest import skipIf
 import tempfile
 import os

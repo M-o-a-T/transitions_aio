@@ -1,5 +1,5 @@
 from contextlib import AbstractContextManager
-from transitions.core import Event, Machine, ModelParameter, TransitionConfig, CallbacksArg, StateConfig
+from transitions_aio.core import Event, Machine, ModelParameter, TransitionConfig, CallbacksArg, StateConfig
 from typing import Any, Dict, Literal, Optional, Type, List, DefaultDict, Union, Callable, Sequence
 from types import TracebackType
 from logging import Logger

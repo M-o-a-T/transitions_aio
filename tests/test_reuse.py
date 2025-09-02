@@ -3,9 +3,9 @@ try:
 except ImportError:
     pass
 
-from transitions import MachineError
-from transitions.extensions import MachineFactory
-from transitions.extensions.nesting import NestedState, HierarchicalMachine
+from transitions_aio import MachineError
+from transitions_aio.extensions import MachineFactory
+from transitions_aio.extensions.nesting import NestedState, HierarchicalMachine
 
 from .utils import Stuff
 from .test_core import TYPE_CHECKING
@@ -20,7 +20,7 @@ except ImportError:
 
 if TYPE_CHECKING:
     from typing import List, Union, Dict, Any, Sequence
-    from transitions.core import TransitionConfig, TransitionConfigDict
+    from transitions_aio.core import TransitionConfig, TransitionConfigDict
 
 test_states = ['A', 'B', {'name': 'C', 'children': ['1', '2', {'name': '3', 'children': ['a', 'b', 'c']}]},
                'D', 'E', 'F']

@@ -1,7 +1,7 @@
 from collections import deque, defaultdict
 
-from transitions.core import Machine, listify
-from transitions.extensions.markup import HierarchicalMarkupMachine, MarkupMachine
+from transitions_aio.core import Machine, listify
+from transitions_aio.extensions.markup import HierarchicalMarkupMachine, MarkupMachine
 
 
 _placeholder_body = "raise RuntimeError('This should be overridden')"
@@ -92,7 +92,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from transitions.core import CallbacksArg, StateIdentifier, EventData
+    from transitions_aio.core import CallbacksArg, StateIdentifier, EventData
 
 
 class BaseModel(metaclass=ABCMeta):

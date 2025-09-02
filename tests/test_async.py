@@ -2,12 +2,12 @@ import sys
 
 from functools import partial
 
-from transitions.extensions.factory import AsyncGraphMachine, HierarchicalAsyncGraphMachine
-from transitions.extensions.states import add_state_features
+from transitions_aio.extensions.factory import AsyncGraphMachine, HierarchicalAsyncGraphMachine
+from transitions_aio.extensions.states import add_state_features
 
 try:
     import anyio
-    from transitions.extensions.asyncio import AsyncMachine, HierarchicalAsyncMachine, AsyncEventData, \
+    from transitions_aio.extensions.asyncio import AsyncMachine, HierarchicalAsyncMachine, AsyncEventData, \
         AsyncTransition, AsyncTimeout
 
 except (ImportError, SyntaxError):
@@ -24,7 +24,7 @@ from .test_pygraphviz import pgv
 
 if TYPE_CHECKING:
     from typing import Type, Sequence, List
-    from transitions.extensions.anyio import AsyncTransitionConfig
+    from transitions_aio.extensions.anyio import AsyncTransitionConfig
 
 
 @skipIf(anyio is None, "AsyncMachine requires asyncio and contextvars suppport")

@@ -1,4 +1,4 @@
-from transitions import Machine
+from transitions_aio import Machine
 
 try:
     from anyio import get_cancelled_exc_class

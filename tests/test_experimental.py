@@ -3,16 +3,16 @@ from unittest import TestCase
 from types import ModuleType
 from unittest.mock import MagicMock
 
-from transitions import Machine
-from transitions.experimental.utils import generate_base_model
-from transitions.experimental.utils import add_transitions, transition, event, with_model_definitions
-from transitions.extensions import HierarchicalMachine
-from transitions.extensions.markup import MarkupMachine
+from transitions_aio import Machine
+from transitions_aio.experimental.utils import generate_base_model
+from transitions_aio.experimental.utils import add_transitions, transition, event, with_model_definitions
+from transitions_aio.extensions import HierarchicalMachine
+from transitions_aio.extensions.markup import MarkupMachine
 
 from .utils import Stuff
 
 if TYPE_CHECKING:
-    from transitions.core import MachineConfig, TransitionConfig
+    from transitions_aio.core import MachineConfig, TransitionConfig
     from typing import Type
 
 

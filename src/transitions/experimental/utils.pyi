@@ -2,10 +2,10 @@ from typing import Union, Callable, List, Optional, Iterable, Type, ClassVar, An
     Sequence, TypedDict, Required
 
 from enum import Enum
-from transitions.core import StateIdentifier, CallbacksArg, CallbackFunc, Machine, MachineConfig, \
+from transitions_aio.core import StateIdentifier, CallbacksArg, CallbackFunc, Machine, MachineConfig, \
     TransitionConfigList
-from transitions.extensions.asyncio import AsyncCallbacksArg
-from transitions.extensions.markup import MarkupConfig, MarkupMachine
+from transitions_aio.extensions.asyncio import AsyncCallbacksArg
+from transitions_aio.extensions.markup import MarkupConfig, MarkupMachine
 
 _placeholder_body: str
 

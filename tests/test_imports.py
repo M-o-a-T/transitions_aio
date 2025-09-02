@@ -1,11 +1,11 @@
 def test_imports() -> None:
-    from transitions import Machine
-    from transitions.extensions import GraphMachine, HierarchicalGraphMachine, HierarchicalMachine, LockedMachine
-    from transitions.extensions import MachineFactory, LockedHierarchicalGraphMachine, LockedHierarchicalMachine
-    from transitions.extensions import LockedGraphMachine
+    from transitions_aio import Machine
+    from transitions_aio.extensions import GraphMachine, HierarchicalGraphMachine, HierarchicalMachine, LockedMachine
+    from transitions_aio.extensions import MachineFactory, LockedHierarchicalGraphMachine, LockedHierarchicalMachine
+    from transitions_aio.extensions import LockedGraphMachine
     try:
         # only available for Python 3
-        from transitions.extensions import AsyncMachine, HierarchicalAsyncMachine
-        from transitions.extensions import AsyncGraphMachine, HierarchicalAsyncGraphMachine
+        from transitions_aio.extensions import AsyncMachine, HierarchicalAsyncMachine
+        from transitions_aio.extensions import AsyncGraphMachine, HierarchicalAsyncGraphMachine
     except (ImportError, SyntaxError):  # pragma: no cover
         pass

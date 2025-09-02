@@ -4,7 +4,7 @@ except ImportError:
     pass
 
 from unittest import TestCase
-from transitions.extensions import MachineFactory
+from transitions_aio.extensions import MachineFactory
 
 
 class TestFactory(TestCase):

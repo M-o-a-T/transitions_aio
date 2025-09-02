@@ -5,9 +5,9 @@ except ImportError:
 
 from collections import OrderedDict
 
-from transitions.extensions.nesting import NestedState as State, _build_state_list
-from transitions.extensions import HierarchicalGraphMachine
-from transitions import MachineError
+from transitions_aio.extensions.nesting import NestedState as State, _build_state_list
+from transitions_aio.extensions import HierarchicalGraphMachine
+from transitions_aio import MachineError
 from .test_nesting import TestNestedTransitions as TestNested
 from .test_pygraphviz import pgv
 from .test_graphviz import pgv as gv

@@ -35,6 +35,11 @@ repository = "https://github.com/M-o-a-T/transitions_aio.git"
 [bdist_wheel]
 universal = 1
 
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["transitions_aio*"]  # alternatively: `exclude = ["additional*"]`
+namespaces = false
+
 [tool.setuptools_scm]
 
 [tool.pytest]
@@ -117,5 +122,5 @@ ignore-imports=false
 
 
 [tool.coverage.run]
-source = "src/transitions"
+source = "src/transitions_aio"
 relative_files = true

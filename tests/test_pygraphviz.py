@@ -1,6 +1,6 @@
 from .utils import Stuff
 from .test_graphviz import TestDiagrams, TestDiagramsNested, TestDiagramsImport
-from transitions.extensions.states import add_state_features, Timeout, Tags
+from transitions_aio.extensions.states import add_state_features, Timeout, Tags
 from unittest import skipIf
 
 try:

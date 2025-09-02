@@ -17,8 +17,8 @@ from .locking import LockedMachine
 from .diagrams import GraphMachine, NestedGraphTransition, HierarchicalGraphMachine
 
 try:
-    from transitions.extensions.asyncio import AsyncMachine, AsyncTransition
-    from transitions.extensions.asyncio import HierarchicalAsyncMachine, NestedAsyncTransition
+    from transitions_aio.extensions.asyncio import AsyncMachine, AsyncTransition
+    from transitions_aio.extensions.asyncio import HierarchicalAsyncMachine, NestedAsyncTransition
 except (ImportError, SyntaxError):  # pragma: no cover
     class AsyncMachine(Machine):  # type: ignore
         """A mock of AsyncMachine when anyio is not installed."""

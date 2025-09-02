@@ -1,6 +1,6 @@
-from transitions import Machine, MachineError
-from transitions.extensions.states import *
-from transitions.extensions import MachineFactory
+from transitions_aio import Machine, MachineError
+from transitions_aio.extensions.states import *
+from transitions_aio.extensions import MachineFactory
 from time import sleep
 
 from unittest import TestCase, skipIf
@@ -15,7 +15,7 @@ except ImportError:
 
 if TYPE_CHECKING:
     from typing import Type, Sequence
-    from transitions.core import TransitionConfig
+    from transitions_aio.core import TransitionConfig
 
 
 class TestTransitions(TestCase):

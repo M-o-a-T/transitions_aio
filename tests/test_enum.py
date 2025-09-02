@@ -1,9 +1,9 @@
 from enum import Enum
 from unittest import TestCase, skipIf
 
-from transitions.core import Machine
-from transitions.extensions.diagrams import GraphMachine, HierarchicalGraphMachine
-from transitions.extensions.nesting import HierarchicalMachine
+from transitions_aio.core import Machine
+from transitions_aio.extensions.diagrams import GraphMachine, HierarchicalGraphMachine
+from transitions_aio.extensions.nesting import HierarchicalMachine
 
 
 try:
@@ -17,7 +17,7 @@ from .test_graphviz import pgv as gv
 
 if TYPE_CHECKING:
     from typing import Type, List, Union, Dict, Sequence
-    from transitions.core import TransitionConfig
+    from transitions_aio.core import TransitionConfig
 
 
 @skipIf(enum is None, "enum is not available")

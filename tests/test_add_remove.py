@@ -3,7 +3,7 @@ try:
 except ImportError:
     pass
 
-from transitions import Machine
+from transitions_aio import Machine
 from unittest import TestCase
 
 import gc

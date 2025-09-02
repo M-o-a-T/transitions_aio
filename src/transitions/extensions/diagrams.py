@@ -16,7 +16,7 @@ import logging
 import warnings
 from functools import partial
 
-from transitions import Transition
+from transitions_aio import Transition
 
 from ..core import listify
 from .markup import MarkupMachine, HierarchicalMarkupMachine

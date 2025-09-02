@@ -9,8 +9,8 @@ from functools import partial
 from unittest import TestCase, skipIf
 import weakref
 
-from transitions import Machine, MachineError, State, EventData
-from transitions.core import listify, _prep_ordered_arg, Transition
+from transitions_aio import Machine, MachineError, State, EventData
+from transitions_aio.core import listify, _prep_ordered_arg, Transition
 
 from .utils import InheritedStuff
 from .utils import Stuff, DummyModel
@@ -23,7 +23,7 @@ except ImportError:
 
 if TYPE_CHECKING:
     from typing import Sequence
-    from transitions.core import TransitionConfig, StateConfig, TransitionConfigDict
+    from transitions_aio.core import TransitionConfig, StateConfig, TransitionConfigDict
 
 
 def on_exit_A(event):

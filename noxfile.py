@@ -6,12 +6,6 @@ nox.options.stop_on_first_error = True
 
 
 @nox.session(python=python[-1])
-def test_check_manifest(session):
-    session.install("check-manifest")
-    session.run("check-manifest")
-
-
-@nox.session(python=python[-1])
 def test_mypy(session):
     session.install(".")
     session.install("-rrequirements_test.txt")

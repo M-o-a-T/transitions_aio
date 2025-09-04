@@ -18,7 +18,7 @@ readme = "README.md"
 
 [project.optional-dependencies]
 async = ["anyio"]
-dev = ["pytest", "mock", "graphviz", "pygraphviz", "anyio", "pycodestyle"]
+dev = ["pytest", "mock", "anyio", "pycodestyle"]
 diagrams = ["pygraphviz"]
 mypy = ["mypy", "graphviz"]
 

@@ -20,7 +20,7 @@ def test_mypy(session):
     session.run("pytest", "-nauto", "--doctest-modules", "tests/")
 
 
-@nox.session(python=python)
+@nox.session(python=python[-1])
 def test(session):
     session.install(".")
     session.install("-rrequirements_test.txt")
@@ -28,7 +28,7 @@ def test(session):
     session.run("pytest", "-nauto", "tests/")
 
 
-@nox.session(python=python[-1])
+@nox.session(python=python)
 def test_no_gv(session):
     session.install(".")
     session.install("-rrequirements_test.txt")

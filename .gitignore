@@ -23,3 +23,6 @@ coverage.xml
 
 # Debian packaging
 /debian/
+
+# Debian packaging
+/debian/

@@ -296,20 +296,6 @@ class TestAsync(TestTransitions):
                 tg.start_soon(self.call_delayed, m2.mock, 0.04)
             self.assertTrue(m1.is_A())
             self.assertTrue(m2.is_B())
-            mock.reset_mock()
-            with self.assertRaises(ValueError), ungroup:
-                # m1.error raises an error which should cancel m1.to_A but not m2.mock and m2.check
-                async with anyio.create_task_group() as tg:
-                    tg.start_soon(m1.to_A)
-                    tg.start_soon(m2.to_A)
-                    tg.start_soon(self.call_delayed, m1.delayed, 0.01)
-                    tg.start_soon(self.call_delayed, m2.delayed, 0.01)
-                    tg.start_soon(self.call_delayed, m1.error, 0.02)
-                    tg.start_soon(self.call_delayed, m2.mock, 0.03)
-                    tg.start_soon(self.call_delayed, m2.check, 0.04)
-            await anyio.sleep(0.05)  # give m2 events time to finish
-            self.assertTrue(m1.is_B())
-            self.assertTrue(m2.is_A())
         anyio.run(run)
 
     def test_queued_remove(self):

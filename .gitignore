@@ -20,3 +20,6 @@ sandbox*
 coverage.xml
 .dmypy.json
 .venv
+
+# Debian packaging
+/debian/

@@ -38,7 +38,7 @@ class MachineFactory:
 
     # get one of the predefined classes which fulfill the criteria
     @staticmethod
-    def get_predefined(graph=False, nested=False, locked=False, asyncio=False, anyio=False):
+    def get_predefined(graph=False, nested=False, locked=False, asyncio=False):
         """A function to retrieve machine classes by required functionality.
         Args:
             graph (bool): Whether the returned class should contain graph support.
@@ -48,7 +48,7 @@ class MachineFactory:
         Returns (class): A machine class with the specified features.
         """
         try:
-            return _CLASS_MAP[(graph, nested, locked, asyncio, anyio)]
+            return _CLASS_MAP[(graph, nested, locked, asyncio)]
         except KeyError:
             raise ValueError("Feature combination not (yet) supported")  # from KeyError
 
@@ -106,34 +106,18 @@ class HierarchicalAsyncGraphMachine(GraphMachine, HierarchicalAsyncMachine):
     transition_cls = NestedAsyncTransition
 
 
-class AnyioGraphMachine(GraphMachine, AnyioMachine):
-    """A machine that supports anyio-based asynchronous event/callback processing with Graphviz support."""
-
-    transition_cls = AnyioTransition
-
-
-class HierarchicalAnyioGraphMachine(GraphMachine, HierarchicalAnyioMachine):
-    """A hierarchical machine that supports anyio-based asynchronous event/callback processing with Graphviz support."""
-
-    transition_cls = NestedAnyioTransition
-
-
 # 4d tuple (graph, nested, locked, async)
 _CLASS_MAP = {
-    (False, False, False, False, False): Machine,
-    (False, False, True, False, False): LockedMachine,
-    (False, True, False, False, False): HierarchicalMachine,
-    (False, True, True, False, False): LockedHierarchicalMachine,
-    (True, False, False, False, False): GraphMachine,
-    (True, False, True, False, False): LockedGraphMachine,
-    (True, True, False, False, False): HierarchicalGraphMachine,
-    (True, True, True, False, False): LockedHierarchicalGraphMachine,
-    (False, False, False, True, False): AsyncMachine,
-    (True, False, False, True, False): AsyncGraphMachine,
-    (False, True, False, True, False): HierarchicalAsyncMachine,
-    (True, True, False, True, False): HierarchicalAsyncGraphMachine,
-    (False, False, False, False, True): AnyioMachine,
-    (True, False, False, False, True): AnyioGraphMachine,
-    (False, True, False, False, True): HierarchicalAnyioMachine,
-    (True, True, False, False, True): HierarchicalAnyioGraphMachine,
+    (False, False, False, False): Machine,
+    (False, False, True, False): LockedMachine,
+    (False, True, False, False): HierarchicalMachine,
+    (False, True, True, False): LockedHierarchicalMachine,
+    (True, False, False, False): GraphMachine,
+    (True, False, True, False): LockedGraphMachine,
+    (True, True, False, False): HierarchicalGraphMachine,
+    (True, True, True, False): LockedHierarchicalGraphMachine,
+    (False, False, False, True): AsyncMachine,
+    (True, False, False, True): AsyncGraphMachine,
+    (False, True, False, True): HierarchicalAsyncMachine,
+    (True, True, False, True): HierarchicalAsyncGraphMachine,
 }

@@ -17,8 +17,10 @@ description = "A lightweight, anyio-capable, object-oriented state machine imple
 readme = "README.md"
 
 [project.optional-dependencies]
+async = ["anyio"]
+dev = ["pytest", "mock", "graphviz", "pygraphviz", "anyio", "pycodestyle"]
 diagrams = ["pygraphviz"]
-dev = ["mock", "tox", "graphviz", "pygraphviz", "anyio"]
+mypy = ["mypy", "graphviz"]
 
 [[project.authors]]
 name = "Tal Yarkoni"

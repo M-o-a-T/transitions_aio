@@ -1,0 +1,28 @@
+Source: transitions_aio
+Maintainer: "Matthias Urlichs" <matthias@urlichs.de>
+Section: python
+Priority: optional
+Build-Depends: dh-python, python3-setuptools, python3-all, debhelper (>= 13),
+  python3-mock,
+  python3-tox,
+  python3-graphviz,
+  python3-pygraphviz,
+  python3-anyio,
+  python3-setuptools,
+  python3-wheel,
+  python3-setuptools-scm,
+Standards-Version: 3.9.6
+Homepage: https://github.com/M-o-a-T/transitions_aio
+
+Package: python3-transitions_aio
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends},
+Description: A lightweight, anyio-capable, object-oriented state machine implementation
+  # <a name="transitions-module"></a> transitions_aio
+  .
+  A lightweight, object-oriented, anyio-enabled state machine implementation in Python with many extensions. Compatible with Python 3.8+.
+  .
+  This is a fork of [transitions](https://github.com/pytransitions/transitions).
+  It replaces `asyncio` with [anyio](https://github.com/agronholm/anyio).
+  .
+

@@ -1,0 +1,5 @@
+transitions_aio (0.9.3.1-1) unstable; urgency=medium
+
+  * Initial Debianization.
+
+ -- Matthias Urlichs <matthias@urlichs.de>  Thu, 04 Sep 2025 16:24:52 +0200

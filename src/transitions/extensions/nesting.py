@@ -917,8 +917,8 @@ class HierarchicalMachine(Machine):
                               self.name,
                               type(err).__name__,
                               str(err))
-            if not isinstance(err, Exception):
-                raise
+                if not isinstance(err, Exception):
+                    raise
         return event_data.result
 
     def _add_model_to_state(self, state, model):

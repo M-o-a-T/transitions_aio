@@ -5,6 +5,7 @@ build/
 dist/
 *.egg-info
 .eggs/
+.pybuild/
 *.iml
 .idea
 .vscode
@@ -22,4 +23,3 @@ coverage.xml
 .venv
 
 # Debian packaging
-/debian/

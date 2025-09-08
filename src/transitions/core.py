@@ -916,6 +916,7 @@ class Machine(object):
         Returns:
             bool: True if a transitions has been conducted or the trigger event has been queued.
         """
+        trigger_name = getattr(trigger_name, "name", trigger_name)
         try:
             event = self.events[trigger_name]
         except KeyError:
@@ -968,6 +969,7 @@ class Machine(object):
             **kwargs: Additional arguments which can be passed to the created transition.
                 This is useful if you plan to extend Machine.Transition and require more parameters.
         """
+        trigger = getattr(trigger, "name", trigger)
         if trigger == self.model_attribute:
             raise ValueError("Trigger name cannot be same as model attribute name.")
         if trigger not in self.events:

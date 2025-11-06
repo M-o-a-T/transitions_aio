@@ -156,14 +156,12 @@ class GraphMachine(MarkupMachine):
             from .diagrams_pygraphviz import Graph, NestedGraph, pgv  # pylint: disable=import-outside-toplevel
             if pgv:
                 return NestedGraph if is_hsm else Graph
-            _LOGGER.warning("Could not import pygraphviz backend. Will try graphviz backend next.")
             graph_engine = "graphviz"
 
         if graph_engine == "graphviz":
             from .diagrams_graphviz import Graph, NestedGraph, pgv  # pylint: disable=import-outside-toplevel
             if pgv:
                 return NestedGraph if is_hsm else Graph
-            _LOGGER.warning("Could not import graphviz backend. Fallback to mermaid graphs")
 
         from .diagrams_mermaid import NestedGraph, Graph  # pylint: disable=import-outside-toplevel
         return NestedGraph if is_hsm else Graph

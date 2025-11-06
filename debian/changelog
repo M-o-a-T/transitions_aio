@@ -1,3 +1,9 @@
+transitions-aio (0.9.3.3-1) unstable; urgency=medium
+
+  * Merge warnings redux
+
+ -- Matthias Urlichs <matthias@urlichs.de>  Thu, 06 Nov 2025 16:48:02 +0100
+
 transitions-aio (0.9.3.2-1) unstable; urgency=medium
 
   * Merge

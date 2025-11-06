@@ -22,4 +22,4 @@ coverage.xml
 .dmypy.json
 .venv
 
-# Debian packaging
+/.pybuild
